@@ -8,7 +8,7 @@ import (
 
 // TODO: Fix error handling
 func (lidar *RPLidar) ReadScans(readLength int) error {
-	fmt.Println("launch reading")
+
 	for true {
 		buf := make([]byte, readLength)
 		_, err := lidar.SerialPort.Read(buf)

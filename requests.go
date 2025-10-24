@@ -91,7 +91,7 @@ func ReadResponseDescriptor(serial serial.Port) (data_length uint32, multiple_re
 	binary.Read(reader, binary.LittleEndian, &startflag1)
 
 	if startflag1[0] != 0xA5 {
-		fmt.Println(buf)
+
 		return 0, false, 0x00, fmt.Errorf("Invalid response flag (1)")
 	}
 
@@ -100,7 +100,7 @@ func ReadResponseDescriptor(serial serial.Port) (data_length uint32, multiple_re
 	binary.Read(reader, binary.LittleEndian, &startflag2)
 
 	if startflag2[0] != 0x5A {
-		fmt.Println(buf)
+
 		return 0, false, 0x00, fmt.Errorf("Invalid response flag (2)")
 	}
 
