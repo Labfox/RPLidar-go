@@ -4,25 +4,83 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
 
-	"github.com/icza/bitio"
 	"go.bug.st/serial"
 )
 
-func SendRequest(serial serial.Port, command byte, data *[]byte) error {
+type RPLidar struct {
+	Model            int
+	FirmwareMajor    int
+	FirmwareMinor    int
+	HardwareVersion  int
+	SerialNumber     string
+	SerialPort       serial.Port
+	DistanceReadings chan DistanceReading
+}
+
+type DistanceReading struct {
+	Quality  int
+	NewScan  bool
+	Angle    float32
+	Distance float32
+}
+
+func NewRPLidar(device string, baudRate int) (RPLidar, error) {
+	var nRPLidar RPLidar = RPLidar{
+		DistanceReadings: make(chan DistanceReading),
+	}
+
+	var err error
+
+	mode := &serial.Mode{
+		BaudRate: baudRate,
+	}
+	nRPLidar.SerialPort, err = serial.Open(device, mode)
+	if err != nil {
+		return nRPLidar, err
+	}
+
+	err = nRPLidar.GetDeviceInfo()
+	if err != nil {
+		return nRPLidar, err
+	}
+
+	return nRPLidar, nil
+}
+
+func (lidar *RPLidar) SendRequest(command byte, data *[]byte) error {
 	buf := new(bytes.Buffer)
 
 	buf.Write([]byte{0xA5, command})
 
 	if data == nil {
-		serial.Write(buf.Bytes())
-		return nil
-	} else {
-		panic(fmt.Errorf("not implemented yet"))
+		_, err := lidar.SerialPort.Write(buf.Bytes())
+		return err
 	}
+
+	dSize := uint8(len(*data))
+	binary.Write(buf, binary.LittleEndian, dSize)
+
+	buf.Write(*data)
+
+	checksum := byte(0)
+	checksum ^= 0xA5
+	checksum ^= command
+	checksum ^= byte(len(*data))
+
+	for _, b := range *data {
+		checksum ^= b
+	}
+
+	buf.Write([]byte{checksum})
+
+	_, err := lidar.SerialPort.Write(buf.Bytes())
+	return err
 }
 
-func ReadResponseDescriptor(serial serial.Port) (data_length int32, multiple_response bool, data_type byte, err error) {
+// TODO: Fix the horrible bits reading
+func ReadResponseDescriptor(serial serial.Port) (data_length uint32, multiple_response bool, data_type byte, err error) {
 	buf := make([]byte, 7)
 	serial.Read(buf)
 
@@ -33,6 +91,7 @@ func ReadResponseDescriptor(serial serial.Port) (data_length int32, multiple_res
 	binary.Read(reader, binary.LittleEndian, &startflag1)
 
 	if startflag1[0] != 0xA5 {
+		fmt.Println(buf)
 		return 0, false, 0x00, fmt.Errorf("Invalid response flag (1)")
 	}
 
@@ -41,33 +100,19 @@ func ReadResponseDescriptor(serial serial.Port) (data_length int32, multiple_res
 	binary.Read(reader, binary.LittleEndian, &startflag2)
 
 	if startflag2[0] != 0x5A {
+		fmt.Println(buf)
 		return 0, false, 0x00, fmt.Errorf("Invalid response flag (2)")
 	}
 
-	bitsReader := bitio.NewReader(reader)
-
-	length_sb, err := bitsReader.ReadBits(30)
+	var b [4]byte
+	_, err = reader.Read(b[:4])
 	if err != nil {
-		return 0, false, 0x00, err
+		log.Fatal(err)
 	}
+	combined := binary.LittleEndian.Uint32(b[:])
 
-	length_byte := int32(length_sb)
-
-	bb_writer := new(bytes.Buffer)
-
-	binary.Write(bb_writer, binary.BigEndian, length_byte)
-
-	breader := bytes.NewReader(bb_writer.Bytes())
-
-	var length int32
-
-	binary.Read(breader, binary.LittleEndian, &length)
-
-	fmt.Println(length_sb, length_byte, bb_writer.Bytes(), length)
-	send_mode_bt, err := bitsReader.ReadBits(2)
-	if err != nil {
-		return length, false, 0x00, err
-	}
+	length := combined & 0x3FFFFFFF        // lower 30 bits
+	send_mode_bt := (combined >> 30) & 0x3 // upper 2 bits
 
 	switch send_mode_bt {
 	case 0x0:
