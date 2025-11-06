@@ -7,6 +7,9 @@ import (
 )
 
 func (lidar *RPLidar) GetHealth() (int, int, error) {
+	if lidar.IsMock {
+		return 0,0, nil
+	}
 	err := lidar.SendRequest(0x52, nil)
 	if err != nil {
 		return 0, 0, err

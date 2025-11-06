@@ -17,6 +17,7 @@ type RPLidar struct {
 	SerialNumber     string
 	SerialPort       serial.Port
 	DistanceReadings chan DistanceReading
+	IsMock bool
 }
 
 type DistanceReading struct {
@@ -33,7 +34,11 @@ func NewRPLidar(device string, baudRate int) (RPLidar, error) {
 
 	var err error
 
-	mode := &serial.Mode{
+	if device =="mock"{
+		nRPLidar.IsMock = true
+
+	}else {
+		mode := &serial.Mode{
 		BaudRate: baudRate,
 	}
 	nRPLidar.SerialPort, err = serial.Open(device, mode)
@@ -46,6 +51,10 @@ func NewRPLidar(device string, baudRate int) (RPLidar, error) {
 		return nRPLidar, err
 	}
 
+	}
+	
+
+	
 	return nRPLidar, nil
 }
 

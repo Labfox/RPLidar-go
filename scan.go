@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math/rand"
+	"time"
 )
 
 // TODO: Fix error handling
@@ -79,6 +81,29 @@ func (lidar *RPLidar) ReadScans(readLength int) error {
 }
 
 func (lidar *RPLidar) Scan() error {
+	if lidar.IsMock {
+		go func() {
+			k := 0
+			for {
+
+				lidar.DistanceReadings <- DistanceReading{
+				Quality: int(rand.Int31n(50)),
+				NewScan: k==12,
+				Angle: float32(rand.Int31n(360)),
+				Distance: float32(rand.Int31n(12000)),
+				
+				}
+				time.Sleep(time.Second/1500)
+			k = k+1
+			if k==13 {
+				k = 1
+			}
+			}
+			
+		}()
+		return nil
+	}
+	
 	err := lidar.SerialPort.SetDTR(false)
 	if err != nil {
 		return err
