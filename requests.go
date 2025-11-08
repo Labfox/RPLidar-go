@@ -17,7 +17,7 @@ type RPLidar struct {
 	SerialNumber     string
 	SerialPort       serial.Port
 	DistanceReadings chan DistanceReading
-	IsMock bool
+	IsMock           bool
 }
 
 type DistanceReading struct {
@@ -34,27 +34,25 @@ func NewRPLidar(device string, baudRate int) (RPLidar, error) {
 
 	var err error
 
-	if device =="mock"{
+	if device == "mock" {
 		nRPLidar.IsMock = true
 
-	}else {
+	} else {
 		mode := &serial.Mode{
-		BaudRate: baudRate,
-	}
-	nRPLidar.SerialPort, err = serial.Open(device, mode)
-	if err != nil {
-		return nRPLidar, err
+			BaudRate: baudRate,
+		}
+		nRPLidar.SerialPort, err = serial.Open(device, mode)
+		if err != nil {
+			return nRPLidar, err
+		}
+
+		err = nRPLidar.GetDeviceInfo()
+		if err != nil {
+			return nRPLidar, err
+		}
+
 	}
 
-	err = nRPLidar.GetDeviceInfo()
-	if err != nil {
-		return nRPLidar, err
-	}
-
-	}
-	
-
-	
 	return nRPLidar, nil
 }
 
@@ -101,7 +99,7 @@ func ReadResponseDescriptor(serial serial.Port) (data_length uint32, multiple_re
 
 	if startflag1[0] != 0xA5 {
 
-		return 0, false, 0x00, fmt.Errorf("Invalid response flag (1)")
+		return 0, false, 0x00, fmt.Errorf("invalid response flag (1)")
 	}
 
 	startflag2 := make([]byte, 1)
@@ -110,7 +108,7 @@ func ReadResponseDescriptor(serial serial.Port) (data_length uint32, multiple_re
 
 	if startflag2[0] != 0x5A {
 
-		return 0, false, 0x00, fmt.Errorf("Invalid response flag (2)")
+		return 0, false, 0x00, fmt.Errorf("invalid response flag (2)")
 	}
 
 	var b [4]byte

@@ -8,7 +8,7 @@ import (
 
 func (lidar *RPLidar) GetHealth() (int, int, error) {
 	if lidar.IsMock {
-		return 0,0, nil
+		return 0, 0, nil
 	}
 	err := lidar.SendRequest(0x52, nil)
 	if err != nil {
@@ -21,11 +21,11 @@ func (lidar *RPLidar) GetHealth() (int, int, error) {
 	}
 
 	if multiple_response {
-		return 0, 0, fmt.Errorf("Wrong response data")
+		return 0, 0, fmt.Errorf("wrong response data")
 	}
 
 	if data_type != 6 {
-		return 0, 0, fmt.Errorf("Wrong response type")
+		return 0, 0, fmt.Errorf("wrong response type")
 	}
 
 	buf := make([]byte, data_length)

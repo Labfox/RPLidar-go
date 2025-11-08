@@ -22,11 +22,11 @@ func (lidar *RPLidar) GetDeviceInfo() error {
 	}
 
 	if multiple_response {
-		return fmt.Errorf("Wrong response data")
+		return fmt.Errorf("wrong response data")
 	}
 
 	if data_type != 4 {
-		return fmt.Errorf("Wrong response type")
+		return fmt.Errorf("wrong response type")
 	}
 
 	buf := make([]byte, data_length)

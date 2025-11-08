@@ -11,7 +11,7 @@ import (
 // TODO: Fix error handling
 func (lidar *RPLidar) ReadScans(readLength int) error {
 
-	for true {
+	for {
 		buf := make([]byte, readLength)
 		_, err := lidar.SerialPort.Read(buf)
 		if err != nil {
@@ -76,8 +76,6 @@ func (lidar *RPLidar) ReadScans(readLength int) error {
 			Distance: float32(distance),
 		}
 	}
-
-	return nil
 }
 
 func (lidar *RPLidar) Scan() error {
@@ -87,23 +85,22 @@ func (lidar *RPLidar) Scan() error {
 			for {
 
 				lidar.DistanceReadings <- DistanceReading{
-				Quality: int(rand.Int31n(50)),
-				NewScan: k==12,
-				Angle: float32(rand.Int31n(360)),
-				Distance: float32(rand.Int31n(12000)),
-				
+					Quality:  int(rand.Int31n(50)),
+					NewScan:  k == 12,
+					Angle:    float32(rand.Int31n(360)),
+					Distance: float32(rand.Int31n(12000)),
 				}
-				time.Sleep(time.Second/1500)
-			k = k+1
-			if k==13 {
-				k = 1
+				time.Sleep(time.Second / 1500)
+				k = k + 1
+				if k == 13 {
+					k = 1
+				}
 			}
-			}
-			
+
 		}()
 		return nil
 	}
-	
+
 	err := lidar.SerialPort.SetDTR(false)
 	if err != nil {
 		return err
@@ -120,11 +117,11 @@ func (lidar *RPLidar) Scan() error {
 	}
 
 	if !multiple_response {
-		return fmt.Errorf("Wrong response data")
+		return fmt.Errorf("wrong response data")
 	}
 
 	if data_type != 0x81 {
-		return fmt.Errorf("Wrong response type")
+		return fmt.Errorf("wrong response type")
 	}
 
 	go lidar.ReadScans(int(data_length))
