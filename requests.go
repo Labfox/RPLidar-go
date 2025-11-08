@@ -38,13 +38,6 @@ func NewRPLidar(device string, baudRate int) (RPLidar, error) {
 		nRPLidar.IsMock = true
 
 	} else {
-		mode := &serial.Mode{
-			BaudRate: baudRate,
-		}
-		nRPLidar.SerialPort, err = serial.Open(device, mode)
-		if err != nil {
-			return nRPLidar, err
-		}
 
 		err = nRPLidar.GetDeviceInfo()
 		if err != nil {
